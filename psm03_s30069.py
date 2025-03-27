@@ -2,134 +2,125 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-g = 9.81
-mass = 0
+g_const = 9.81
+t_final = 10
+dt = 0.01
+num_steps = int(t_final / dt) + 1
+
+m = 0
+L = 1.0
+start_angle = math.pi / 4
+start_velocity = 0.0
 method_name = ''
-length = 1.0
-initial_angle = math.pi / 4
-initial_velocity = 0.0
-tmax = 10
-time_step = 0.01
-steps = int(tmax / time_step) + 1
-times = []
-angles = []
-velocities = []
 
 
-def accuracy(alpha, omega):
-    epsilon = -(g / length) * np.sin(alpha)
-    return omega, epsilon
+def dynamics(a, v):
+    w = v
+    eps = -(g_const / L) * np.sin(a)
+    return w, eps
 
 
-def euler_method(angle, velocity):
-    global times, velocities, angles
-    time = 0.0
-    times, angles, velocities = [time], [angle], [velocity]
-    for _ in range(steps):
-        k1_omega, k1_epsilon = accuracy(angle, velocity)
-        angle += k1_omega * time_step
-        velocity += k1_epsilon * time_step
-        time += time_step
-        times.append(time)
-        angles.append(angle)
-        velocities.append(velocity)
-    display_energy()
-    draw_graph()
+def euler_integration(a, v):
+    w, eps = dynamics(a, v)
+    return a + w * dt, v + eps * dt
 
 
-def midpoint_method(angle, velocity):
-    global times, angles, velocities
-    time = 0.0
-    time_values, angle_values, velocity_values = [time], [angle], [velocity]
-    for _ in range(steps):
-        k1_omega, k1_epsilon = accuracy(angle, velocity)
-        mid_angle = angle + 0.5 * k1_omega * time_step
-        mid_velocity = velocity + 0.5 * k1_epsilon * time_step
-        k2_omega, k2_epsilon = accuracy(mid_angle, mid_velocity)
-        angle += k2_omega * time_step
-        velocity += k2_epsilon * time_step
-        time += time_step
-        time_values.append(time)
-        angle_values.append(angle)
-        velocity_values.append(velocity)
-    display_energy()
-    draw_graph()
+def midpoint_integration(a, v):
+    w1, e1 = dynamics(a, v)
+    a_mid = a + 0.5 * w1 * dt
+    v_mid = v + 0.5 * e1 * dt
+    w2, e2 = dynamics(a_mid, v_mid)
+    return a + w2 * dt, v + e2 * dt
 
 
-def rk4_method(angle, velocity):
-    global times, angles, velocities
-    time = 0.0
-    times, angles, velocities, = [time], [angle], [velocity]
-    for _ in range(steps):
-        k1_omega, k1_epsilon = accuracy(angle, velocity)
-        k2_omega, k2_epsilon = accuracy(angle + 0.5 * time_step * k1_omega, velocity + 0.5 * time_step * k1_epsilon)
-        k3_omega, k3_epsilon = accuracy(angle + 0.5 * time_step * k2_omega, velocity + 0.5 * time_step * k2_epsilon)
-        k4_omega, k4_epsilon = accuracy(angle + time_step * k3_omega, velocity + time_step * k3_epsilon)
-        angle += (time_step / 6) * (k1_omega + 2 * k2_omega + 2 * k3_omega + k4_omega)
-        velocity += (time_step / 6) * (k1_epsilon + 2 * k2_epsilon + 2 * k3_epsilon + k4_epsilon)
-        time += time_step
-        times.append(time)
-        angles.append(angle)
-        velocities.append(velocity)
-    display_energy()
-    draw_graph()
+def rk4_integration(a, v):
+    w1, e1 = dynamics(a, v)
+    w2, e2 = dynamics(a + 0.5 * dt * w1, v + 0.5 * dt * e1)
+    w3, e3 = dynamics(a + 0.5 * dt * w2, v + 0.5 * dt * e2)
+    w4, e4 = dynamics(a + dt * w3, v + dt * e3)
+    return (a + (dt / 6) * (w1 + 2 * w2 + 2 * w3 + w4),
+            v + (dt / 6) * (e1 + 2 * e2 + 2 * e3 + e4))
 
 
-def display_energy():
-    global angles, velocities
-    angles, velocities = np.array(angles), np.array(velocities)
-    kinetic_energy = 0.5 * mass * (length * velocities) ** 2
-    potential_energy = mass * g * length * (1 - np.cos(angles))
-    total_energy = kinetic_energy + potential_energy
-    plt.plot(times, kinetic_energy, label=f'{method_name} - Kinetic Energy')
-    plt.plot(times, potential_energy, label=f'{method_name} - Potential Energy')
-    plt.plot(times, total_energy, label=f'{method_name} - Total Energy')
-    plt.legend()
-    plt.title(f'Energy over Time - {method_name}')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Energy (J)')
+def run_simulation(func, a, v):
+    t = 0.0
+    t_vals = [t]
+    a_vals = [a]
+    v_vals = [v]
+    for _ in range(num_steps):
+        a, v = func(a, v)
+        t += dt
+        t_vals.append(t)
+        a_vals.append(a)
+        v_vals.append(v)
+    return t_vals, a_vals, v_vals
+
+
+def plot_outcome(ts, as_, vs):
+    arr_a = np.array(as_)
+    arr_v = np.array(vs)
+    ke = 0.5 * m * (L * arr_v) ** 2
+    pe = m * g_const * L * (1 - np.cos(arr_a))
+    te = ke + pe
+    fig, axx = plt.subplots(1, 2, figsize=(12, 5))
+    axx[0].plot(ts, ke, label='Kinetic')
+    axx[0].plot(ts, pe, label='Potential')
+    axx[0].plot(ts, te, label='Total')
+    axx[0].set_title(f'Energy - {method_name}')
+    axx[0].set_xlabel('Time (s)')
+    axx[0].set_ylabel('Energy (J)')
+    axx[0].legend()
+    xs = L * np.sin(arr_a)
+    ys = -L * np.cos(arr_a)
+    axx[1].plot(xs, ys, label='Path')
+    axx[1].set_title(f'Trajectory - {method_name}')
+    axx[1].set_xlabel('X (m)')
+    axx[1].set_ylabel('Y (m)')
+    axx[1].legend()
+    plt.tight_layout()
     plt.show()
 
 
-def draw_graph():
-    x_values, y_values = length * np.sin(angles), -length * np.cos(angles)
-    plt.plot(x_values, y_values, label=f'{method_name} - Trajectory')
-    plt.xlabel('X (m)')
-    plt.ylabel('Y (m)')
-    plt.legend()
-    plt.title(f'Trajectory - {method_name}')
-    plt.show()
-
-
-def method_switch(number):
+def select_method(num):
     global method_name
-    if number == 1:
-        method_name = 'Euler Method'
-        euler_method()
-    elif number == 2:
-        method_name = 'Midpoint Method'
-        midpoint_method()
-    elif number == 3:
-        method_name = 'Runge-Kutta 4 Method'
-        rk4_method()
+    if num == 1:
+        method_name = 'Euler'
+        f = euler_integration
+    elif num == 2:
+        method_name = 'Midpoint'
+        f = midpoint_integration
+    elif num == 3:
+        method_name = 'RK4'
+        f = rk4_integration
+    else:
+        print("Invalid choice.")
+        return
+    ts, angs, vels = run_simulation(f, start_angle, start_velocity)
+    plot_outcome(ts, angs, vels)
+
+
+def ask_for_value(txt, conv, cond=lambda x: True, err="Invalid input"):
+    while True:
+        try:
+            val = conv(input(txt))
+            if not cond(val):
+                print(err)
+                continue
+            return val
+        except ValueError:
+            print(err)
 
 
 def main():
-    global mass, length, initial_angle, initial_velocity
-
-    mass = float(input("Enter mass: "))
-    length = float(input("Enter length: "))
-    initial_angle = float(input("Enter initial angle: "))
-    initial_velocity = float(input("Enter initial velocity: "))
-
-    choice = int(input(
-'''Choose a method:
-1 - Euler
-2 - Midpoint
-3 - Rk4
-'''))
-
-    method_switch(choice)
+    global m, L, start_angle, start_velocity
+    m = ask_for_value("Mass: ", float, lambda x: x > 0, "Must be > 0")
+    L = ask_for_value("Length: ", float, lambda x: x > 0, "Must be > 0")
+    deg_a = ask_for_value("Angle (deg): ", float)
+    start_angle = math.radians(deg_a)
+    start_velocity = ask_for_value("Velocity: ", float)
+    choice = ask_for_value("Method (1=Euler,2=Midpoint,3=RK4): ", int,
+                           lambda x: x in [1, 2, 3], "Enter 1,2,or 3")
+    select_method(choice)
 
 
 main()
