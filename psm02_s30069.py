@@ -1,4 +1,3 @@
-import math
 import matplotlib.pyplot as plt
 
 k = int(input('Input drag (k): '))
@@ -18,6 +17,7 @@ y = 0
 g = 9.81
 ax = 0
 ay = 0
+
 
 # shared functions
 
@@ -99,6 +99,7 @@ def calculate_halfstep_positions():
     calculate_halfstep_x()
     calculate_halfstep_y()
 
+
 # Run Euler
 def run_euler_simulation():
     xs = [x]
@@ -111,6 +112,7 @@ def run_euler_simulation():
         ys.append(y)
     return xs, ys
 
+
 # Run Midpoint
 def run_midpoint_simulation():
     xs = [x]
@@ -119,14 +121,15 @@ def run_midpoint_simulation():
         calculate_accelerations()
         calculate_halfstep_velocities()
         calculate_halfstep_positions()
-        # Recalculate acceleration at the “half step”
+        # Recalculate acceleration at the half step
         calculate_accelerations()
-        # Now do the full step with the new acceleration
+        # Do the full step with the new acceleration
         calculate_velocities()
         calculate_positions()
         xs.append(x)
         ys.append(y)
     return xs, ys
+
 
 def draw_and_run(choice):
     if choice == 1:
@@ -158,8 +161,10 @@ def draw_and_run(choice):
     plt.legend()
     plt.show()
 
+
 def main():
     choice = int(input('Input 1 for euler simulation or 2 for midpoint simulation: '))
     draw_and_run(choice)
+
 
 main()
