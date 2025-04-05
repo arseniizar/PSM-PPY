@@ -13,8 +13,8 @@ DEFAULT_VALUES = {
     "Mk": 7.347e22,
     "R_ZS_km": 1.5e8,
     "R_ZK_km": 384400,
-    "dt_hours": 1.0,
-    "T_days": 365.25
+    "dt_hours": 0.01,
+    "T_days": 365.25,
 }
 
 
@@ -137,13 +137,16 @@ def extract_trajectories(states_array):
 
 
 def plot_full_view(params, earth_x, earth_y, moon_x, moon_y):
+    a_scala = 170
     plt.figure(figsize=(10, 10))
     plt.plot(0, 0, 'yo', markersize=15, label='Sun')
     plt.plot(earth_x, earth_y, 'b-', label="Earth's Path", linewidth=1)
     plt.plot(earth_x[-1], earth_y[-1], 'bo', markersize=8, label='Earth (Final)')
-    plt.plot(moon_x, moon_y, 'grey', label="Moon's Path", linewidth=0.5)
-    plt.plot(moon_x[-1], moon_y[-1], 'ko', markersize=5, label='Moon (Final)')
-    plt.title('Trajectory of Moon Relative to Sun (Full View)')
+    moon_x_scaled = earth_x + a_scala * (moon_x - earth_x)
+    moon_y_scaled = earth_y + a_scala * (moon_y - earth_y)
+    plt.plot(moon_x_scaled, moon_y_scaled, 'grey', label="Moon's Path (Scaled)", linewidth=0.5)
+    plt.plot(moon_x_scaled[-1], moon_y_scaled[-1], 'ko', markersize=5, label='Moon (Final)')
+    plt.title('Trajectory of Moon Relative to Sun (Full View with Scaled Waves)')
     plt.xlabel('X Position (meters)')
     plt.ylabel('Y Position (meters)')
     plt.legend()
@@ -210,5 +213,6 @@ def main():
     sim_times, states_history = run_simulation(sim_params, init_state)
     earth_x, earth_y, moon_x, moon_y = extract_trajectories(states_history)
     plot_system_trajectories(sim_params, earth_x, earth_y, moon_x, moon_y)
+
 
 main()
