@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-
 def lorenz_derivative(state, A, B, C):
     x, y, z = state
     return np.array([
@@ -31,6 +30,7 @@ def rk4_step(state, dt, A, B, C):
     k4 = lorenz_derivative(state + dt * k3, A, B, C)
     return state + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
 
+
 def simulate(method, initial, dt, steps, A, B, C):
     x = np.empty(steps + 1)
     z = np.empty(steps + 1)
@@ -46,6 +46,7 @@ def simulate(method, initial, dt, steps, A, B, C):
         x[i], z[i] = state[0], state[2]
 
     return x, z
+
 
 def plot_attractor(x, z, label):
     plt.plot(x, z, lw=0.5, label=label)
